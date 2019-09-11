@@ -3,7 +3,7 @@ np.set_printoptions(threshold=np.inf, linewidth=300)
 import pandas as pd
 import time
 from PIL import Image
-#print('hallo')
+print('hallo')
 
 class Map_Obj():
     def __init__(self, task=1):
