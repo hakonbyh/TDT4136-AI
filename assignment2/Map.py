@@ -1,18 +1,45 @@
 import numpy as np
 np.set_printoptions(threshold=np.inf, linewidth=300)
 import pandas as pd
-import time
 from PIL import Image
-print('hallo')
+
+
+class Node():
+    """A node class for A* Pathfinding"""
+
+    def __init__(self, parent=None, position=None, cost=0):
+        self.parent = parent
+        self.position = position
+
+        self.g = 0
+        self.h = 0
+        self.f = 0
+
+        self.cost = cost
+
+        self.children = []  # list of all successor nodes
+
+    def __eq__(self, other):
+        return self.position == other.position
+
+
 
 class Map_Obj():
+    """A Map class for structuring a map, its values and behavior"""
     def __init__(self, task=1):
         self.start_pos, self.goal_pos, self.end_goal_pos, self.path_to_map = self.fill_critical_positions(task)
-        self.int_map, self.str_map = self.read_map(self.path_to_map, self.start_pos, self.goal_pos)
+        self.int_map, self.str_map, self.node_map = self.read_map(self.path_to_map)
         self.tmp_cell_value = self.get_cell_value(self.goal_pos)
+
         self.set_cell_value(self.start_pos, ' S ')
         self.set_cell_value(self.goal_pos, ' G ')
         self.tick_counter = 0
+
+        self.start_node = Node(None, self.start_pos)
+        self.end_node = Node(None, self.end_goal_pos)
+
+        self.open_list = [self.start_node]
+        self.closed_list = []
         #self.set_start_pos_str_marker(start_pos, self.str_map)
         #self.set_goal_pos_str_marker(goal_pos, self.str_map)
 
@@ -29,13 +56,24 @@ class Map_Obj():
         data = df.values
         # Convert numpy array to string to make it more human readable
         data_str = data.astype(str)
-        # Replace numeric values with more human readable symbols
+        # Replace numeric values with nonodesdesmore human readable symbols
         data_str[data_str == '-1'] = ' # '
         data_str[data_str == '1'] = ' . '
         data_str[data_str == '2'] = ' , '
         data_str[data_str == '3'] = ' : '
         data_str[data_str == '4'] = ' ; '
-        return data, data_str
+        #nodes = df[data] = Node(None, None, df.values)
+        nodes=[]
+        #print(data)
+        for i in data:
+            row = []
+            for j in data[i]:
+                node = Node(None, position=(i,j), cost= data[i][j])
+                #print('data:',data[i][j])
+                row.append(node)
+            nodes.append(row)
+
+        return data, data_str, nodes
 
     def fill_critical_positions(self, task):
         """
@@ -45,31 +83,30 @@ class Map_Obj():
         :return: Start position, Initial goal position, End goal position, path to map for current task.
         """
         if task == 1:
-            start_pos = [27, 18]
-            goal_pos = [40, 32]
+            start_pos = (27, 18)
+            goal_pos = (40, 32)
             end_goal_pos = goal_pos
             path_to_map = 'Samfundet_map_1.csv'
         elif task == 2:
-            start_pos = [40, 32]
-            goal_pos = [8, 5]
+            start_pos = (40, 32)
+            goal_pos = (8, 5)
             end_goal_pos = goal_pos
             path_to_map = 'Samfundet_map_1.csv'
         elif task == 3:
-            start_pos = [28, 32]
-            goal_pos = [6, 32]
+            start_pos = (28, 32)
+            goal_pos = (6, 32)
             end_goal_pos = goal_pos
             path_to_map = 'Samfundet_map_2.csv'
         elif task == 4:
-            start_pos = [28, 32]
-            goal_pos = [6, 32]
+            start_pos = (28, 32)
+            goal_pos = (6, 32)
             end_goal_pos = goal_pos
             path_to_map = 'Samfundet_map_Edgar_full.csv'
         elif task == 5:
-            start_pos = [14, 18]
-            goal_pos = [6, 36]
-            end_goal_pos = [6, 7]
+            start_pos = (14, 18)
+            goal_pos = (6, 36)
+            end_goal_pos = (6, 7)
             path_to_map = 'Samfundet_map_2.csv'
-
 
         return start_pos, goal_pos, end_goal_pos, path_to_map
 
@@ -219,7 +256,7 @@ class Map_Obj():
         # Define what colors to give to different values of the string map (undefined values will remain yellow, this is
         # how the yellow path is painted)
         colors = {' # ': (255, 0, 0), ' . ': (215, 215, 215), ' , ': (166, 166, 166), ' : ': (96, 96, 96),
-                  ' ; ': (36, 36, 36), ' S ': (255, 0, 255), ' G ': (0, 128, 255)}
+                  ' ; ': (36, 36, 36), ' S ': (255, 0, 255), ' G ': (0, 128, 255), ' P ': (200, 0, 200)}
         # Go through image and set pixel color for every position
         for y in range(height):
             for x in range(width):
