@@ -74,7 +74,7 @@ class ReflexAgent(Agent):
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
 
         "*** YOUR CODE HERE ***"
-        return successorGameState.getvalue()
+        return successorGameState.getScore()
 
 def scoreEvaluationFunction(currentGameState):
     """
@@ -129,47 +129,50 @@ class MinimaxAgent(MultiAgentSearchAgent):
             Returns the total number of agents in the game
         """
         "*** YOUR CODE HERE ***"
+
+        """always zero"""
         PACMAN = 0
-        def maxAgent(state, depth):
+        def max_agent(state, depth):
             if state.isWin() or state.isLose():
                 return state.getScore()
             actions = state.getLegalActions(PACMAN)
-            maxValue = float("-inf")
-            value = maxValue
-            bestAction = Directions.STOP
+            best_score = float("-inf")
+            score = best_score
+            best_action = Directions.STOP
             for action in actions:
-                value = minAgent(state.generateSuccessor(PACMAN, action), depth, 1)
-                if value > maxValue:
-                    maxValue = value
-                    bestAction = action
+                score = exp_agent(state.generateSuccessor(PACMAN, action), depth, 1)
+                if score > best_score:
+                    best_score = score
+                    best_action = action
             if depth == 0:
-                return bestAction
+                return best_action
             else:
-                return maxValue
+                return best_score
 
-        def minAgent(state, depth, agent):
+        def exp_agent(state, depth, ghost):
             if state.isLose() or state.isWin():
                 return state.getScore()
-            nextAgent = agent + 1
-            if agent == state.getNumAgents() - 1:
-                 # if agent is the last in the list, then next agent is Pacman (with index 0)
-                nextAgent = PACMAN
-            actions = state.getLegalActions(agent)
-            minValue = float("inf")
-            value = minValue
+            next_ghost = ghost + 1
+            if ghost == state.getNumAgents() - 1:
+                # Although I call this variable next_ghost, at this point we are referring to a pacman agent.
+                # I never changed the variable name and now I feel bad. That's why I am writing this guilty comment :(
+                next_ghost = PACMAN
+            actions = state.getLegalActions(ghost)
+            best_score = float("inf")
+            score = best_score
             for action in actions:
-                if nextAgent == PACMAN: # Pacman's turn next
+                if next_ghost == PACMAN: # We are on the last ghost and it will be Pacman's turn next.
                     if depth == self.depth - 1:
-                        value = self.evaluationFunction(state.generateSuccessor(agent, action))
+                        score = self.evaluationFunction(state.generateSuccessor(ghost, action))
                     else:
-                        value = maxAgent(state.generateSuccessor(agent, action), depth + 1)
+                        score = max_agent(state.generateSuccessor(ghost, action), depth + 1)
                 else:
-                    value = minAgent(state.generateSuccessor(agent, action), depth, nextAgent)
-                if value < minValue:
-                    minValue = value
-            return minValue
-        return maxAgent(gameState, 0)
-
+                    score = exp_agent(state.generateSuccessor(ghost, action), depth, next_ghost)
+                if score < best_score:
+                    best_score = score
+            return best_score
+        return max_agent(gameState, 0)
+        
         util.raiseNotDefined()
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
@@ -183,54 +186,55 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         """
         "*** YOUR CODE HERE ***"
         PACMAN = 0
-        def maxAgent(gameState, depth, alpha, beta):
-            if gameState.isWin() or gameState.isLose():
-                return gameState.getScore()
-            actions = gameState.getLegalActions(PACMAN)
-            maxValue = float("-inf")
-            value = maxValue
-            bestAction = Directions.STOP
-            for action in actions: 
-                value = minAgent(gameState.generateSuccessor(PACMAN, action), depth, 1, alpha, beta)
-                if value > maxValue:
-                    maxValue = value
-                    bestAction = action
-                alpha = max(alpha, maxValue)
-                if maxValue > beta:
-                    return maxValue
-            if depth == 0:
-                return bestAction
-            else:
-                return maxValue
-
-        def minAgent(gameState, depth, agent, alpha, beta):
-            if gameState.isLose() or gameState.isWin():
-                return gameState.getScore()
-            nextAgent = agent + 1
-            if agent == gameState.getNumAgents() - 1:
-                # if agent is the last in the list, then next agent is Pacman (with index 0)
-                nextAgent = PACMAN
-            actions = gameState.getLegalActions(agent)
-            minValue = float("inf")
-            value = minValue
+        def max_agent(state, depth, alpha, beta):
+            if state.isWin() or state.isLose():
+                return state.getScore()
+            actions = state.getLegalActions(PACMAN)
+            best_score = float("-inf")
+            score = best_score
+            best_action = Directions.STOP
             for action in actions:
-                if nextAgent == PACMAN: # next turn is Pacman
+                score = min_agent(state.generateSuccessor(PACMAN, action), depth, 1, alpha, beta)
+                if score > best_score:
+                    best_score = score
+                    best_action = action
+                alpha = max(alpha, best_score)
+                if best_score > beta:
+                    return best_score
+            if depth == 0:
+                return best_action
+            else:
+                return best_score
+
+        def min_agent(state, depth, ghost, alpha, beta):
+            if state.isLose() or state.isWin():
+                return state.getScore()
+            next_ghost = ghost + 1
+            if ghost == state.getNumAgents() - 1:
+                # Although I call this variable next_ghost, at this point we are referring to a pacman agent.
+                # I never changed the variable name and now I feel bad. That's why I am writing this guilty comment :(
+                next_ghost = PACMAN
+            actions = state.getLegalActions(ghost)
+            best_score = float("inf")
+            score = best_score
+            for action in actions:
+                if next_ghost == PACMAN: # We are on the last ghost and it will be Pacman's turn next.
                     if depth == self.depth - 1:
-                        value = self.evaluationFunction(gameState.generateSuccessor(agent, action))
+                        score = self.evaluationFunction(state.generateSuccessor(ghost, action))
                     else:
-                        value = maxAgent(gameState.generateSuccessor(agent, action), depth + 1, alpha, beta)
+                        score = max_agent(state.generateSuccessor(ghost, action), depth + 1, alpha, beta)
                 else:
-                    value = minAgent(gameState.generateSuccessor(agent, action), depth, nextAgent, alpha, beta)
-                if value < minValue:
-                    minValue = value
-                beta = min(beta, minValue)
-                if minValue < alpha:
-                    return minValue
-            return minValue
-        return maxAgent(gameState, 0, float("-inf"), float("inf"))
+                    score = min_agent(state.generateSuccessor(ghost, action), depth, next_ghost, alpha, beta)
+                if score < best_score:
+                    best_score = score
+                beta = min(beta, best_score)
+                if best_score < alpha:
+                    return best_score
+            return best_score
+        return max_agent(gameState, 0, float("-inf"), float("inf"))
 
         util.raiseNotDefined()
-        
+
 class ExpectimaxAgent(MultiAgentSearchAgent):
     """
       Your expectimax agent (question 4)
