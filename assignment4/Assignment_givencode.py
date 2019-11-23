@@ -1,15 +1,6 @@
 import copy
 import itertools
 
-def main():
-    boards = ['easy', 'medium', 'hard', 'veryhard']
-    for board in boards:
-        sudoku = create_sudoku_csp('boards/%s.txt' % board)
-        solution = sudoku.backtracking_search()
-        print "Sudoku board: %s\n" % board.upper()
-        print_sudoku_solution(solution)
-        print "* backtrack() was called %d times." % (sudoku.backtrackCounter)
-        print "* backtrack() failed %d times.\n\n" % (sudoku.backtrackFailsCounter)
 
 class CSP:
     def __init__(self):
@@ -22,13 +13,6 @@ class CSP:
         # self.constraints[i][j] is a list of legal value pairs for
         # the variable pair (i, j)
         self.constraints = {}
-
-        # extra variables for counting iterations
-        #self.backtrackCounter:Integer, the total number of calls to backtrack()
-        self.backtrackCounter = 0
-
-        #self.backtrackFailsCounter:Integer -> the number of times backtrack() fails
-        self.backtrackFailsCounter = 0
 
     def add_variable(self, name, domain):
         """Add a new variable to the CSP. 'name' is the variable name
@@ -73,7 +57,7 @@ class CSP:
 
         # Next, filter this list of value pairs through the function
         # 'filter_function', so that only the legal value pairs remain
-        self.constraints[i][j] = list(filter(lambda value_pair: filter_function(*value_pair), self.constraints[i][j]))
+        self.constraints[i][j] = filter(lambda value_pair: filter_function(*value_pair), self.constraints[i][j])
 
     def add_all_different_constraint(self, variables):
         """Add an Alldiff constraint between all of the variables in the
@@ -125,26 +109,7 @@ class CSP:
         iterations of the loop.
         """
         # TODO: IMPLEMENT THIS
-        self.backtrackCounter =+ 1  # counts backtrack iterations
-
-        if self.isComplete(assignment): return assignment # If complete, return assignment
-        
-        var = self.select_unassigned_variable(assignment) # Get the variable with the smallest domain
-
-        for val in assignment[var]: # For each value in the domain of the var variable
-            assignmentCopy = copy.deepcopy(assignment) #  a copy of assignment to avoid interference
-            assignmentCopy[var] = val # var is set to a single value
-
-            if self.inference(assignmentCopy, self.get_all_arcs()): # If true
-                result = self.backtrack(assignmentCopy) # Do search with assignmentCopy
-                if result: return result # If result is not None, return result (this is the solution)
-        self.backtrackFailsCounter += 1 # else failed counter is incremented
-        return None # Couldn't find solution
-
-    def isComplete(self, assignment):
-        unsolved = filter(lambda x: len(x) != 1, assignment.values()) # Returns a list of the unsolved variables
-        return not len(unsolved) # If the length of unsolved is 0, return True
-        
+        pass
 
     def select_unassigned_variable(self, assignment):
         """The function 'Select-Unassigned-Variable' from the pseudocode
@@ -153,9 +118,7 @@ class CSP:
         of legal values has a length greater than one.
         """
         # TODO: IMPLEMENT THIS
-        variables = min(filter(lambda x: len(x) > 1, assignment.values()), key=lambda y: len(y)) # returns the list with the fewest elements
-        return [key for key, val in assignment.items() if val == variables][0] # return the name of one of the variables in assignment
-
+        pass
 
     def inference(self, assignment, queue):
         """The function 'AC-3' from the pseudocode in the textbook.
@@ -164,16 +127,7 @@ class CSP:
         is the initial queue of arcs that should be visited.
         """
         # TODO: IMPLEMENT THIS
-        while len(queue):
-            i, j = queue.pop(0) # j is the first variable in queue of arcs
-            if self.revise(assignment, i, j): # check constraints between i and j using revise()
-                if not len(assignment[i]): # If no legal values in the i-domain 
-                    return False
-                else:    
-                    for k, var in self.get_all_neighboring_arcs(i): # var not used
-                        if (k != i) and (k != j): # removes i and j from the neighbour arcs
-                            queue.append((k, i))
-        return True 
+        pass
 
     def revise(self, assignment, i, j):
         """The function 'Revise' from the pseudocode in the textbook.
@@ -185,15 +139,7 @@ class CSP:
         legal values in 'assignment'.
         """
         # TODO: IMPLEMENT THIS
-        revised = False
-        constraintSet = frozenset(self.constraints[i][j]) 
-        for x in assignment[i]: #for evry x in  the domain of i
-            constraints = [(x, y) for y in assignment[j] if x != y] # Get all valid pairs of constraints 
-            satisfySet = frozenset(constraints).intersection(constraintSet) # Get only satisfying constrainsts
-            if not len(satisfySet): # If satisfySet is empty
-                assignment[i].remove(x) # delete x from domain i
-                revised = True # returns true if we revise the domain of i
-        return revised 
+        pass
 
 
 def create_map_coloring_csp():
@@ -211,6 +157,10 @@ def create_map_coloring_csp():
         for other_state in other_states:
             csp.add_constraint_one_way(state, other_state, lambda i, j: i != j)
             csp.add_constraint_one_way(other_state, state, lambda i, j: i != j)
+
+    for constraint in csp.constraints:
+        for entry in csp.constraints[constraint]:
+            csp.constraints[constraint][entry] = list(csp.constraints[constraint][entry])
     return csp
 
 
@@ -240,6 +190,9 @@ def create_sudoku_csp(filename):
                     cells.append('%d-%d' % (row, col))
             csp.add_all_different_constraint(cells)
 
+    for constraint in csp.constraints:
+        for entry in csp.constraints[constraint]:
+            csp.constraints[constraint][entry] = list(csp.constraints[constraint][entry])
     return csp
 
 
@@ -250,12 +203,9 @@ def print_sudoku_solution(solution):
     """
     for row in range(9):
         for col in range(9):
-            print(solution['%d-%d' % (row, col)][0]),
+            print(solution['%d-%d' % (row, col)][0], end=" "),
             if col == 2 or col == 5:
-                print('|'),
+                print('|', end=" "),
         print("")
         if row == 2 or row == 5:
             print('------+-------+------')
-
-if __name__== "__main__":
-    main()
